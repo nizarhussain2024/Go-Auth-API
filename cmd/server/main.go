@@ -38,9 +38,9 @@ var store = &UserStore{
 }
 
 func main() {
-	http.HandleFunc("/api/auth/register", registerHandler)
-	http.HandleFunc("/api/auth/login", loginHandler)
-	http.HandleFunc("/api/users/me", meHandler)
+	http.HandleFunc("/api/auth/register", loggingMiddleware(registerHandler))
+	http.HandleFunc("/api/auth/login", loggingMiddleware(loginHandler))
+	http.HandleFunc("/api/users/me", loggingMiddleware(authMiddleware(meHandler)))
 	http.HandleFunc("/health", healthHandler)
 
 	fmt.Println("Go Auth API running on :8080")
@@ -69,6 +69,16 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if !validateEmail(req.Email) {
+		http.Error(w, "Invalid email format", http.StatusBadRequest)
+		return
+	}
+
+	if !validatePassword(req.Password) {
+		http.Error(w, "Password must be at least 8 characters", http.StatusBadRequest)
 		return
 	}
 

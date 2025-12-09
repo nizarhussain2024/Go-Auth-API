@@ -12,3 +12,4 @@ COPY --from=builder /app/go-auth-api .
 EXPOSE 8080
 CMD ["./go-auth-api"]
 
+
