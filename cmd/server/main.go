@@ -38,8 +38,9 @@ var store = &UserStore{
 }
 
 func main() {
-	http.HandleFunc("/api/auth/register", loggingMiddleware(registerHandler))
-	http.HandleFunc("/api/auth/login", loggingMiddleware(loginHandler))
+	http.HandleFunc("/api/auth/register", loggingMiddleware(rateLimitMiddleware(registerHandler)))
+	http.HandleFunc("/api/auth/login", loggingMiddleware(rateLimitMiddleware(loginHandler)))
+	http.HandleFunc("/api/auth/refresh", loggingMiddleware(refreshTokenHandler))
 	http.HandleFunc("/api/users/me", loggingMiddleware(authMiddleware(meHandler)))
 	http.HandleFunc("/health", healthHandler)
 
@@ -144,12 +145,16 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := generateToken()
+	accessToken := generateToken()
+	refreshToken := generateToken()
+	
+	// Store refresh token
+	refreshTokens.Store(refreshToken, user.ID, 7*24*time.Hour)
 	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(Token{
-		AccessToken:  token,
-		RefreshToken: generateToken(),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    3600,
 	})
