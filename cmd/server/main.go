@@ -41,6 +41,8 @@ func main() {
 	http.HandleFunc("/api/auth/register", loggingMiddleware(rateLimitMiddleware(registerHandler)))
 	http.HandleFunc("/api/auth/login", loggingMiddleware(rateLimitMiddleware(loginHandler)))
 	http.HandleFunc("/api/auth/refresh", loggingMiddleware(refreshTokenHandler))
+	http.HandleFunc("/api/auth/forgot-password", loggingMiddleware(rateLimitMiddleware(forgotPasswordHandler)))
+	http.HandleFunc("/api/auth/reset-password", loggingMiddleware(rateLimitMiddleware(resetPasswordHandler)))
 	http.HandleFunc("/api/users/me", loggingMiddleware(authMiddleware(meHandler)))
 	http.HandleFunc("/health", healthHandler)
 
