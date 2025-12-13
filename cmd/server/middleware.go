@@ -42,3 +42,4 @@ func validatePassword(password string) bool {
 	return len(password) >= 8
 }
 
+

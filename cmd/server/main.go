@@ -43,6 +43,7 @@ func main() {
 	http.HandleFunc("/api/auth/refresh", loggingMiddleware(refreshTokenHandler))
 	http.HandleFunc("/api/auth/forgot-password", loggingMiddleware(rateLimitMiddleware(forgotPasswordHandler)))
 	http.HandleFunc("/api/auth/reset-password", loggingMiddleware(rateLimitMiddleware(resetPasswordHandler)))
+	http.HandleFunc("/api/auth/verify-email", loggingMiddleware(verifyEmailHandler))
 	http.HandleFunc("/api/users/me", loggingMiddleware(authMiddleware(meHandler)))
 	http.HandleFunc("/health", healthHandler)
 
@@ -102,13 +103,18 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:    time.Now(),
 	}
 	store.users[req.Email] = user
+	
+	// Generate verification token
+	verificationToken := generateVerificationToken(req.Email, user.ID)
 	store.mu.Unlock()
 
+	// In production, send verification email
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "User registered successfully",
-		"user_id": user.ID,
+		"message":            "User registered successfully. Please verify your email.",
+		"user_id":            user.ID,
+		"verification_token": verificationToken, // In production, don't return token
 		"user": map[string]interface{}{
 			"id":    user.ID,
 			"email": user.Email,
