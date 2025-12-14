@@ -44,6 +44,7 @@ func main() {
 	http.HandleFunc("/api/auth/forgot-password", loggingMiddleware(rateLimitMiddleware(forgotPasswordHandler)))
 	http.HandleFunc("/api/auth/reset-password", loggingMiddleware(rateLimitMiddleware(resetPasswordHandler)))
 	http.HandleFunc("/api/auth/verify-email", loggingMiddleware(verifyEmailHandler))
+	http.HandleFunc("/api/auth/logout", loggingMiddleware(authMiddleware(logoutHandler)))
 	http.HandleFunc("/api/users/me", loggingMiddleware(authMiddleware(meHandler)))
 	http.HandleFunc("/health", healthHandler)
 
@@ -158,6 +159,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	
 	// Store refresh token
 	refreshTokens.Store(refreshToken, user.ID, 7*24*time.Hour)
+	
+	// Create session
+	ip := r.RemoteAddr
+	userAgent := r.UserAgent()
+	sessionStore.Create(user.ID, accessToken, ip, userAgent)
 	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(Token{
